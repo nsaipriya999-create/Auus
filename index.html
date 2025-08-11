@@ -3,18 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>తెలుగు జ్యోతిష్య వెబ్‌సైట్</title>
+    <title>తెలుగు జ్యోతిష్య వెబ్‌సైట్ - సూపర్ అధునాతన వెర్షన్</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
-        body { font-family: sans-serif; direction: rtl; text-align: right; }
-        form { max-width: 400px; margin: auto; }
-        label { display: block; margin-top: 10px; }
-        input, button { width: 100%; padding: 8px; margin-top: 5px; }
-        #view { margin-top: 20px; text-align: center; }
-        #paper { margin: auto; }
+        body {
+            font-family: 'Noto Sans Telugu', sans-serif;
+            direction: ltr;
+            text-align: left;
+            background-color: #000;
+            color: #fff;
+            padding: 20px;
+            background-image: url('https://www.publicdomainpictures.net/pictures/20000/velka/starry-night-sky-background.jpg');
+            background-size: cover;
+        }
+        h1, h2, h3 { color: #ffd700; }
+        form, #dailyForm { max-width: 500px; margin: auto; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; }
+        label { display: block; margin-top: 10px; color: #ddd; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: none; }
+        button { background: #4caf50; color: white; cursor: pointer; }
+        button:hover { background: #45a049; }
+        #view, #dailyView { margin-top: 40px; text-align: center; }
+        #paper { margin: auto; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px; }
+        #details, #dailyDetails { max-width: 600px; margin: auto; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #333; }
+        #loading { display: none; text-align: center; margin-top: 20px; color: #ffd700; }
+        @media (max-width: 600px) { form, #dailyForm { padding: 10px; } }
     </style>
 </head>
 <body>
-    <h1>మీ జాతకం చూడండి</h1>
+    <h1>మీ జాతక చక్రం - సూపర్ అధునాతనం</h1>
     <form id="astroForm">
         <label for="name">పేరు:</label>
         <input type="text" id="name" required>
@@ -31,14 +51,64 @@
         <button type="button" onclick="generateChart()">సమర్పించు</button>
     </form>
     
-    <div id="view">
+    <div id="loading">లోడింగ్... దయచేసి వేచి ఉండండి. <span class="spinner"></span></div>
+    
+    <div id="view" style="display: none;">
         <h2 id="nameDisplay"></h2>
         <div id="paper"></div>
+        <button onclick="downloadChart()">చార్ట్ డౌన్‌లోడ్ చేయండి (PNG)</button>
+        <div id="details"></div>
+        <div id="interpretation"></div>
+    </div>
+
+    <h2 style="margin-top: 50px;">డైలీ హారోస్కోప్</h2>
+    <form id="dailyForm">
+        <label for="sign">మీ రాశి:</label>
+        <select id="sign" required>
+            <option value="">ఎంచుకోండి</option>
+            <option value="aries">మేషం</option>
+            <option value="taurus">వృషభం</option>
+            <option value="gemini">మిథునం</option>
+            <option value="cancer">కర్కాటకం</option>
+            <option value="leo">సింహం</option>
+            <option value="virgo">కన్య</option>
+            <option value="libra">తుల</option>
+            <option value="scorpio">వృశ్చికం</option>
+            <option value="sagittarius">ధనుస్సు</option>
+            <option value="capricorn">మకరం</option>
+            <option value="aquarius">కుంభం</option>
+            <option value="pisces">మీనం</option>
+        </select>
+        <button type="button" onclick="getDailyHoroscope()">చూడండి</button>
+    </form>
+    
+    <div id="dailyView" style="display: none;">
+        <h3>డైలీ హారోస్కోప్</h3>
+        <p id="dailyDetails"></p>
     </div>
 
     <script type="module">
         import { Origin, Horoscope } from 'https://unpkg.com/circular-natal-horoscope-js@latest/dist/index.esm.js';
         import * as astrology from 'https://unpkg.com/@astrodraw/astrochart@latest/dist/astrochart.js';
+
+        const signTelugu = {
+            'aries': 'మేషం', 'taurus': 'వృషభం', 'gemini': 'మిథునం', 'cancer': 'కర్కాటకం',
+            'leo': 'సింహం', 'virgo': 'కన్య', 'libra': 'తుల', 'scorpio': 'వృశ్చికం',
+            'sagittarius': 'ధనుస్సు', 'capricorn': 'మకరం', 'aquarius': 'కుంభం', 'pisces': 'మీనం'
+        };
+
+        const planetTelugu = {
+            'sun': 'సూర్యుడు', 'moon': 'చంద్రుడు', 'mercury': 'బుధుడు', 'venus': 'శుక్రుడు',
+            'mars': 'మంగళుడు', 'jupiter': 'గురువు', 'saturn': 'శని', 'uranus': 'యురేనస్',
+            'neptune': 'నెప్ట్యూన్', 'pluto': 'ప్లూటో', 'chiron': 'చిరోన్', 'lilith': 'లిలిత్',
+            'northnode': 'రాహువు'
+        };
+
+        const basicInterpretations = {
+            'sun': 'సూర్యుడు మీ ఆత్మను సూచిస్తాడు. ',
+            'moon': 'చంద్రుడు మీ భావోద్వేగాలను సూచిస్తాడు. '
+            // మరిన్ని జోడించవచ్చు
+        };
 
         async function getLatLong(place) {
             const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json`);
@@ -46,7 +116,7 @@
             if (data && data[0]) {
                 return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
             } else {
-                alert('స్థలం కనుగొనబడలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.');
+                alert('స్థలం కనుగొనబడలేదు.');
                 throw new Error('Place not found');
             }
         }
@@ -61,6 +131,9 @@
                 alert('అన్ని వివరాలు నమోదు చేయండి.');
                 return;
             }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('view').style.display = 'none';
 
             try {
                 const { lat, lon } = await getLatLong(place);
@@ -81,14 +154,13 @@
                 const horoscope = new Horoscope({
                     origin: origin,
                     houseSystem: "whole-sign",
-                    zodiac: "tropical",
+                    zodiac: "sidereal",
                     aspectPoints: ['bodies', 'points', 'angles'],
                     aspectWithPoints: ['bodies', 'points', 'angles'],
                     aspectTypes: ["major", "minor"],
                     language: 'en'
                 });
 
-                // Prepare data for AstroChart
                 const planets = {
                     "Sun": horoscope.CelestialBodies.sun.ChartPosition.Ecliptic.DecimalDegrees,
                     "Moon": horoscope.CelestialBodies.moon.ChartPosition.Ecliptic.DecimalDegrees,
@@ -109,145 +181,85 @@
 
                 const data = { planets, cusps };
 
-                // Display name
                 document.getElementById('nameDisplay').textContent = `${name} గారి జాతక చక్రం`;
 
-                // Clear previous chart
                 document.getElementById('paper').innerHTML = '';
 
-                // Draw chart
                 const chart = new astrology.Chart('paper', 600, 600);
                 chart.radix(data);
+
+                const detailsDiv = document.getElementById('details');
+                detailsDiv.innerHTML = '<h3>గ్రహాల స్థితులు</h3><table><tr><th>గ్రహం</th><th>రాశి</th><th>భావం</th></tr>';
+
+                Object.keys(horoscope.CelestialBodies).forEach(body => {
+                    const telPlanet = planetTelugu[body] || body;
+                    const signKey = horoscope.CelestialBodies[body].Sign.key.toLowerCase();
+                    const telSign = signTelugu[signKey] || signKey;
+                    const house = horoscope.CelestialBodies[body].House.label;
+                    detailsDiv.innerHTML += `<tr><td>${telPlanet}</td><td>${telSign}</td><td>${house}</td></tr>`;
+                });
+
+                const ascSignKey = horoscope.Angles.asc.Sign.key.toLowerCase();
+                const telAscSign = signTelugu[ascSignKey] || ascSignKey;
+                detailsDiv.innerHTML += `</table><p>లగ్నం: ${telAscSign}</p>`;
+
+                detailsDiv.innerHTML += '<h3>ప్రధాన అస్పెక్టులు</h3><ul>';
+                horoscope.Aspects.forEach(aspect => {
+                    const point1 = planetTelugu[aspect.point1] || aspect.point1;
+                    const point2 = planetTelugu[aspect.point2] || aspect.point2;
+                    detailsDiv.innerHTML += `<li>${point1} మరియు ${point2} మధ్య ${aspect.type} అస్పెక్ట్</li>`;
+                });
+                detailsDiv.innerHTML += '</ul>';
+
+                const interpDiv = document.getElementById('interpretation');
+                interpDiv.innerHTML = '<h3>బేసిక్ వివరణ</h3><ul>';
+                Object.keys(horoscope.CelestialBodies).forEach(body => {
+                    if (basicInterpretations[body]) {
+                        const telPlanet = planetTelugu[body] || body;
+                        interpDiv.innerHTML += `<li>${telPlanet}: ${basicInterpretations[body]}</li>`;
+                    }
+                });
+                interpDiv.innerHTML += '</ul>';
+
+                document.getElementById('view').style.display = 'block';
             } catch (error) {
                 console.error(error);
-                alert('ఎర్రర్ సంభవించింది. దయచేసి మళ్లీ ప్రయత్నించండి.');
-            }
-        }
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="te">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>తెలుగు జ్యోతిష్య వెబ్‌సైట్</title>
-    <style>
-        body { font-family: sans-serif; direction: rtl; text-align: right; }
-        form { max-width: 400px; margin: auto; }
-        label { display: block; margin-top: 10px; }
-        input, button { width: 100%; padding: 8px; margin-top: 5px; }
-        #view { margin-top: 20px; text-align: center; }
-        #paper { margin: auto; }
-    </style>
-</head>
-<body>
-    <h1>మీ జాతకం చూడండి</h1>
-    <form id="astroForm">
-        <label for="name">పేరు:</label>
-        <input type="text" id="name" required>
-        
-        <label for="dob">పుట్టిన తేదీ (YYYY-MM-DD):</label>
-        <input type="date" id="dob" required>
-        
-        <label for="tob">పుట్టిన సమయం (HH:MM):</label>
-        <input type="time" id="tob" required>
-        
-        <label for="place">పుట్టిన స్థలం (నగరం లేదా ప్రదేశం):</label>
-        <input type="text" id="place" required>
-        
-        <button type="button" onclick="generateChart()">సమర్పించు</button>
-    </form>
-    
-    <div id="view">
-        <h2 id="nameDisplay"></h2>
-        <div id="paper"></div>
-    </div>
-
-    <script type="module">
-        import { Origin, Horoscope } from 'https://unpkg.com/circular-natal-horoscope-js@latest/dist/index.esm.js';
-        import * as astrology from 'https://unpkg.com/@astrodraw/astrochart@latest/dist/astrochart.js';
-
-        async function getLatLong(place) {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json`);
-            const data = await response.json();
-            if (data && data[0]) {
-                return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-            } else {
-                alert('స్థలం కనుగొనబడలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.');
-                throw new Error('Place not found');
+                alert('ఎర్రర్ సంభవించింది.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
         }
 
-        async function generateChart() {
-            const name = document.getElementById('name').value;
-            const dob = document.getElementById('dob').value;
-            const tob = document.getElementById('tob').value;
-            const place = document.getElementById('place').value;
+        function downloadChart() {
+            html2canvas(document.getElementById('paper')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'jataka_chart.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
 
-            if (!name || !dob || !tob || !place) {
-                alert('అన్ని వివరాలు నమోదు చేయండి.');
+        async function getDailyHoroscope() {
+            const sign = document.getElementById('sign').value;
+            if (!sign) {
+                alert('రాశి ఎంచుకోండి.');
                 return;
             }
 
             try {
-                const { lat, lon } = await getLatLong(place);
-
-                const [year, month, day] = dob.split('-').map(Number);
-                const [hour, minute] = tob.split(':').map(Number);
-
-                const origin = new Origin({
-                    year,
-                    month: month - 1,
-                    date: day,
-                    hour,
-                    minute,
-                    latitude: lat,
-                    longitude: lon
-                });
-
-                const horoscope = new Horoscope({
-                    origin: origin,
-                    houseSystem: "whole-sign",
-                    zodiac: "tropical",
-                    aspectPoints: ['bodies', 'points', 'angles'],
-                    aspectWithPoints: ['bodies', 'points', 'angles'],
-                    aspectTypes: ["major", "minor"],
-                    language: 'en'
-                });
-
-                // Prepare data for AstroChart
-                const planets = {
-                    "Sun": horoscope.CelestialBodies.sun.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Moon": horoscope.CelestialBodies.moon.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Mercury": horoscope.CelestialBodies.mercury.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Venus": horoscope.CelestialBodies.venus.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Mars": horoscope.CelestialBodies.mars.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Jupiter": horoscope.CelestialBodies.jupiter.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Saturn": horoscope.CelestialBodies.saturn.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Uranus": horoscope.CelestialBodies.uranus.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Neptune": horoscope.CelestialBodies.neptune.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Pluto": horoscope.CelestialBodies.pluto.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Chiron": horoscope.CelestialBodies.chiron.ChartPosition.Ecliptic.DecimalDegrees,
-                    "Lilith": horoscope.CelestialBodies.lilith.ChartPosition.Ecliptic.DecimalDegrees,
-                    "NNode": horoscope.CelestialBodies.northnode.ChartPosition.Ecliptic.DecimalDegrees
-                };
-
-                const cusps = horoscope.Houses.map(house => house.ChartPosition.StartPosition.Ecliptic.DecimalDegrees);
-
-                const data = { planets, cusps };
-
-                // Display name
-                document.getElementById('nameDisplay').textContent = `${name} గారి జాతక చక్రం`;
-
-                // Clear previous chart
-                document.getElementById('paper').innerHTML = '';
-
-                // Draw chart
-                const chart = new astrology.Chart('paper', 600, 600);
-                chart.radix(data);
+                const response = await fetch(`https://aztro.sameerkumar.website/?sign=${sign}&day=today`, { method: 'POST' });
+                const data = await response.json();
+                document.getElementById('dailyDetails').innerHTML = `<strong>తేదీ:</strong> ${data.current_date}<br>
+                    <strong>వివరణ:</strong> ${data.description}<br>
+                    <strong>అనుకూలత:</strong> ${data.compatibility}<br>
+                    <strong>మూడ్:</strong> ${data.mood}<br>
+                    <strong>రంగు:</strong> ${data.color}<br>
+                    <strong>లక్కీ నంబర్:</strong> ${data.lucky_number}<br>
+                    <strong>లక్కీ టైమ్:</strong> ${data.lucky_time}`;
+                document.getElementById('dailyView').style.display = 'block';
             } catch (error) {
                 console.error(error);
-                alert('ఎర్రర్ సంభవించింది. దయచేసి మళ్లీ ప్రయత్నించండి.');
+                alert('హారోస్కోప్ లభించలేదు.');
             }
         }
     </script>
