@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>తెలుగు జ్యోతిష్య వెబ్‌సైట్</title>
+    <style>
+        body { font-family: sans-serif; direction: rtl; text-align: right; }
+        form { max-width: 400px; margin: auto; }
+        label { display: block; margin-top: 10px; }
+        input, button { width: 100%; padding: 8px; margin-top: 5px; }
+        #view { margin-top: 20px; text-align: center; }
+        #paper { margin: auto; }
+    </style>
+</head>
+<body>
+    <h1>మీ జాతకం చూడండి</h1>
+    <form id="astroForm">
+        <label for="name">పేరు:</label>
+        <input type="text" id="name" required>
+        
+        <label for="dob">పుట్టిన తేదీ (YYYY-MM-DD):</label>
+        <input type="date" id="dob" required>
+        
+        <label for="tob">పుట్టిన సమయం (HH:MM):</label>
+        <input type="time" id="tob" required>
+        
+        <label for="place">పుట్టిన స్థలం (నగరం లేదా ప్రదేశం):</label>
+        <input type="text" id="place" required>
+        
+        <button type="button" onclick="generateChart()">సమర్పించు</button>
+    </form>
+    
+    <div id="view">
+        <h2 id="nameDisplay"></h2>
+        <div id="paper"></div>
+    </div>
+
+    <script type="module">
+        import { Origin, Horoscope } from 'https://unpkg.com/circular-natal-horoscope-js@latest/dist/index.esm.js';
+        import * as astrology from 'https://unpkg.com/@astrodraw/astrochart@latest/dist/astrochart.js';
+
+        async function getLatLong(place) {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json`);
+            const data = await response.json();
+            if (data && data[0]) {
+                return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+            } else {
+                alert('స్థలం కనుగొనబడలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.');
+                throw new Error('Place not found');
+            }
+        }
+
+        async function generateChart() {
+            const name = document.getElementById('name').value;
+            const dob = document.getElementById('dob').value;
+            const tob = document.getElementById('tob').value;
+            const place = document.getElementById('place').value;
+
+            if (!name || !dob || !tob || !place) {
+                alert('అన్ని వివరాలు నమోదు చేయండి.');
+                return;
+            }
+
+            try {
+                const { lat, lon } = await getLatLong(place);
+
+                const [year, month, day] = dob.split('-').map(Number);
+                const [hour, minute] = tob.split(':').map(Number);
+
+                const origin = new Origin({
+                    year,
+                    month: month - 1,
+                    date: day,
+                    hour,
+                    minute,
+                    latitude: lat,
+                    longitude: lon
+                });
+
+                const horoscope = new Horoscope({
+                    origin: origin,
+                    houseSystem: "whole-sign",
+                    zodiac: "tropical",
+                    aspectPoints: ['bodies', 'points', 'angles'],
+                    aspectWithPoints: ['bodies', 'points', 'angles'],
+                    aspectTypes: ["major", "minor"],
+                    language: 'en'
+                });
+
+                // Prepare data for AstroChart
+                const planets = {
+                    "Sun": horoscope.CelestialBodies.sun.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Moon": horoscope.CelestialBodies.moon.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Mercury": horoscope.CelestialBodies.mercury.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Venus": horoscope.CelestialBodies.venus.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Mars": horoscope.CelestialBodies.mars.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Jupiter": horoscope.CelestialBodies.jupiter.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Saturn": horoscope.CelestialBodies.saturn.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Uranus": horoscope.CelestialBodies.uranus.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Neptune": horoscope.CelestialBodies.neptune.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Pluto": horoscope.CelestialBodies.pluto.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Chiron": horoscope.CelestialBodies.chiron.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Lilith": horoscope.CelestialBodies.lilith.ChartPosition.Ecliptic.DecimalDegrees,
+                    "NNode": horoscope.CelestialBodies.northnode.ChartPosition.Ecliptic.DecimalDegrees
+                };
+
+                const cusps = horoscope.Houses.map(house => house.ChartPosition.StartPosition.Ecliptic.DecimalDegrees);
+
+                const data = { planets, cusps };
+
+                // Display name
+                document.getElementById('nameDisplay').textContent = `${name} గారి జాతక చక్రం`;
+
+                // Clear previous chart
+                document.getElementById('paper').innerHTML = '';
+
+                // Draw chart
+                const chart = new astrology.Chart('paper', 600, 600);
+                chart.radix(data);
+            } catch (error) {
+                console.error(error);
+                alert('ఎర్రర్ సంభవించింది. దయచేసి మళ్లీ ప్రయత్నించండి.');
+            }
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>తెలుగు జ్యోతిష్య వెబ్‌సైట్</title>
+    <style>
+        body { font-family: sans-serif; direction: rtl; text-align: right; }
+        form { max-width: 400px; margin: auto; }
+        label { display: block; margin-top: 10px; }
+        input, button { width: 100%; padding: 8px; margin-top: 5px; }
+        #view { margin-top: 20px; text-align: center; }
+        #paper { margin: auto; }
+    </style>
+</head>
+<body>
+    <h1>మీ జాతకం చూడండి</h1>
+    <form id="astroForm">
+        <label for="name">పేరు:</label>
+        <input type="text" id="name" required>
+        
+        <label for="dob">పుట్టిన తేదీ (YYYY-MM-DD):</label>
+        <input type="date" id="dob" required>
+        
+        <label for="tob">పుట్టిన సమయం (HH:MM):</label>
+        <input type="time" id="tob" required>
+        
+        <label for="place">పుట్టిన స్థలం (నగరం లేదా ప్రదేశం):</label>
+        <input type="text" id="place" required>
+        
+        <button type="button" onclick="generateChart()">సమర్పించు</button>
+    </form>
+    
+    <div id="view">
+        <h2 id="nameDisplay"></h2>
+        <div id="paper"></div>
+    </div>
+
+    <script type="module">
+        import { Origin, Horoscope } from 'https://unpkg.com/circular-natal-horoscope-js@latest/dist/index.esm.js';
+        import * as astrology from 'https://unpkg.com/@astrodraw/astrochart@latest/dist/astrochart.js';
+
+        async function getLatLong(place) {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json`);
+            const data = await response.json();
+            if (data && data[0]) {
+                return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+            } else {
+                alert('స్థలం కనుగొనబడలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.');
+                throw new Error('Place not found');
+            }
+        }
+
+        async function generateChart() {
+            const name = document.getElementById('name').value;
+            const dob = document.getElementById('dob').value;
+            const tob = document.getElementById('tob').value;
+            const place = document.getElementById('place').value;
+
+            if (!name || !dob || !tob || !place) {
+                alert('అన్ని వివరాలు నమోదు చేయండి.');
+                return;
+            }
+
+            try {
+                const { lat, lon } = await getLatLong(place);
+
+                const [year, month, day] = dob.split('-').map(Number);
+                const [hour, minute] = tob.split(':').map(Number);
+
+                const origin = new Origin({
+                    year,
+                    month: month - 1,
+                    date: day,
+                    hour,
+                    minute,
+                    latitude: lat,
+                    longitude: lon
+                });
+
+                const horoscope = new Horoscope({
+                    origin: origin,
+                    houseSystem: "whole-sign",
+                    zodiac: "tropical",
+                    aspectPoints: ['bodies', 'points', 'angles'],
+                    aspectWithPoints: ['bodies', 'points', 'angles'],
+                    aspectTypes: ["major", "minor"],
+                    language: 'en'
+                });
+
+                // Prepare data for AstroChart
+                const planets = {
+                    "Sun": horoscope.CelestialBodies.sun.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Moon": horoscope.CelestialBodies.moon.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Mercury": horoscope.CelestialBodies.mercury.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Venus": horoscope.CelestialBodies.venus.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Mars": horoscope.CelestialBodies.mars.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Jupiter": horoscope.CelestialBodies.jupiter.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Saturn": horoscope.CelestialBodies.saturn.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Uranus": horoscope.CelestialBodies.uranus.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Neptune": horoscope.CelestialBodies.neptune.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Pluto": horoscope.CelestialBodies.pluto.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Chiron": horoscope.CelestialBodies.chiron.ChartPosition.Ecliptic.DecimalDegrees,
+                    "Lilith": horoscope.CelestialBodies.lilith.ChartPosition.Ecliptic.DecimalDegrees,
+                    "NNode": horoscope.CelestialBodies.northnode.ChartPosition.Ecliptic.DecimalDegrees
+                };
+
+                const cusps = horoscope.Houses.map(house => house.ChartPosition.StartPosition.Ecliptic.DecimalDegrees);
+
+                const data = { planets, cusps };
+
+                // Display name
+                document.getElementById('nameDisplay').textContent = `${name} గారి జాతక చక్రం`;
+
+                // Clear previous chart
+                document.getElementById('paper').innerHTML = '';
+
+                // Draw chart
+                const chart = new astrology.Chart('paper', 600, 600);
+                chart.radix(data);
+            } catch (error) {
+                console.error(error);
+                alert('ఎర్రర్ సంభవించింది. దయచేసి మళ్లీ ప్రయత్నించండి.');
+            }
+        }
+    </script>
+</body>
+</html>
